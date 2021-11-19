@@ -1,0 +1,41 @@
+import { Controller, HttpRequest, HttpResponse, notFound, ok} from "../../../../core/presentation";
+import { UserRepository } from "../../infra";
+import bcrypt from "bcrypt";
+import jwt from "jsonwebtoken";
+
+export class GetUserController implements Controller {
+  readonly #repository: UserRepository;
+
+  constructor(repository: UserRepository) {
+    this.#repository = repository;
+  }
+
+  public async handle(request: HttpRequest): Promise<HttpResponse | any> {
+    try {
+      const { username, password } = request.body;
+
+      const user = await this.#repository.getOne(username);
+
+      if (!user) {
+        return notFound();
+      }
+
+      const secret = process.env.SECRET || "123";
+      let token: string | undefined;
+      if (user.password) {
+        const isValidPassword = await bcrypt.compare(password, user.password);
+
+        if (!isValidPassword) {
+        
+        }
+
+        token = jwt.sign({ uid: user.uid }, secret, { expiresIn: "1h" });
+      }
+
+      return ok({ token });
+    } catch (error) {
+      console.log(error);
+      
+    }
+  }
+}
